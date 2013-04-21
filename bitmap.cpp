@@ -1,21 +1,135 @@
 #include "bitmap.h"
 #include <iostream>
+#include <cstring>
 #include <cassert>
 
 using namespace std;
 
-BitMap::BitMap():bitCounts(8),charNums(1)
-{
-    bitMap = new unsigned char[charNums]();
-    assert(bitMap != NULL);
-}
-
 BitMap::BitMap(int lhs)
 {
-    assert(lhs >= 0);
+    assert(lhs > 0);
+    init(lhs);
+}
 
-    bitCounts = lhs;
-    int charOfbitNums = sizeof(unsigned char) * 8;
+void BitMap::SetBitMap(unsigned int lhs)
+{
+    if(bitCounts != 0 || bitMap != NULL || charNums != 0)
+    {
+	delete[] bitMap;
+	init(lhs);
+    }
+}
+
+BitMap::BitMap(const BitMap& lhs)
+{
+    this->bitCounts = lhs.bitCounts;
+    this->charNums = lhs.charNums;
+    this->bitMap = new unsigned char[this->charNums]();
+    
+    assert(this->bitMap != NULL);
+
+    memcpy(this->bitMap,lhs.bitMap,sizeof(unsigned char) * this->charNums);
+}
+
+BitMap& BitMap::operator =(const BitMap& lhs)
+{
+    unsigned char* orig = this->bitMap;
+
+    this->bitCounts = lhs.bitCounts;
+    this->charNums = lhs.charNums;
+    this->bitMap = new unsigned char[this->charNums]();
+    
+    memcpy(this->bitMap,lhs.bitMap,sizeof(unsigned char) * this->charNums);
+
+    delete[] orig;
+    return *this;
+}
+
+bool BitMap::IsExistBit(unsigned int lhs) const
+{
+    assert(lhs <= this->bitCounts);
+
+    int tmp = sizeof(unsigned char) * 8;
+    int divisor = lhs / tmp;
+    int reminder = lhs % tmp;
+
+    if(reminder == 0)
+    {
+	if(divisor == 0)
+	{
+	    unsigned char c = this->bitMap[0];
+
+	    if(c & 0x01)
+	    {
+		return true;
+	    }
+	    else
+	    {
+		return false;
+	    }
+	}
+	else
+	{
+	    unsigned char c = this->bitMap[divisor - 1];
+
+	    if((c >> 7) & 0x01)
+	    {
+	        return true;
+	    }
+	    else
+	    {
+	        return false;
+	    }
+	}
+    }
+    else
+    {
+	unsigned char c = this->bitMap[divisor];
+
+	if((c >> (reminder - 1)) & 0x01)	
+	{
+	    return true;
+	}
+	else
+	{
+	    return false;
+	}
+    }
+}
+
+void BitMap::SetBit(unsigned int lhs)
+{
+    assert(lhs <= this->bitCounts);
+    int tmp = sizeof(unsigned char) * 8;
+    int divisor = lhs / tmp;
+    int reminder = lhs % tmp;
+
+    if(reminder == 0)
+    {
+	if(divisor == 0)
+	{
+	    this->bitMap[0] |= 0x01; 
+	}
+	else
+	{
+	    this->bitMap[divisor - 1] |= 0x80;
+	}
+    }
+    else
+    {
+	this->bitMap[divisor] |= (0x01 << (reminder - 1));
+    }
+}
+
+BitMap::~BitMap()
+{
+    delete[] this->bitMap;
+    bitCounts = charNums = 0;
+}
+
+void BitMap::init(unsigned int lhs)
+{
+    this->bitCounts = lhs;
     bool isZero = bitCounts % charOfbitNums;
 
     if(isZero)
@@ -33,42 +147,8 @@ BitMap::BitMap(int lhs)
 	assert(bitMap != NULL);
     }
 }
-BitMap::BitMap(const BitMap& lhs)
+
+void BitMap::ClearBitMap()
 {
-    this->bitCounts = lhs.bitCounts;
-    this->charNums = lhs.charNums;
-    this->bitMap = new unsigned char[this->charNums]();
-    
-    assert(this->bitMap != NULL);
-
-    memcpy(this->bitMap,lhs->bitMap,sizeof(unsigned char) * this->charNums);
-}
-
-BitMap& BitMap::operator =(const BitMap& lhs)
-{
-    unsigned char* orig = this->bitMap;
-
-    this->bitCounts = lhs.bitCounts;
-    this->charNums = lhs.charNums;
-    this->bitMap = new unsigned char[this->charNums]();
-    
-    memcpy(this->bitMap,lhs->bitMap,sizeof(unsigned char) * this->charNums);
-
-    delete[] orig;
-    return *this;
-}
-
-//向右移动就表示往低端移位
-
-BitMap BitMap::operator >>(unsigned int shift)
-{
-    if(shift > this->bitCounts)
-    {
-	cout << "你移动的位数超过了你本来有的bit数目" << endl;	
-	memset(this->bitMap,0,sizeof(unsigned char) * this->charNums);
-
-	return *this;
-    }
-
-
+    memset(this->bitMap,0,sizeof(unsigned char) * charNums);
 }
